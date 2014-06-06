@@ -1,5 +1,22 @@
 package org.jboss.forge.addon.javaee7.batch.commands;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import javax.batch.api.chunk.AbstractItemReader;
+import javax.batch.api.chunk.AbstractItemWriter;
+import javax.batch.api.chunk.ItemProcessor;
+import javax.batch.api.chunk.ItemReader;
+import javax.batch.api.chunk.ItemWriter;
+import javax.inject.Inject;
+import javax.inject.Named;
+
 import org.jboss.forge.addon.parser.java.facets.JavaSourceFacet;
 import org.jboss.forge.addon.parser.java.resources.JavaResource;
 import org.jboss.forge.addon.parser.java.resources.JavaResourceVisitor;
@@ -29,37 +46,15 @@ import org.jboss.forge.addon.ui.input.UISelectMany;
 import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
-import org.jboss.forge.addon.ui.util.Metadata;
-import org.jboss.forge.addon.ui.validate.UIValidator;
 import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
+import org.jboss.forge.addon.ui.util.Metadata;
+import org.jboss.forge.addon.ui.validate.UIValidator;
 import org.jboss.forge.roaster.model.Annotation;
 import org.jboss.forge.roaster.model.JavaType;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 import org.jboss.forge.roaster.model.source.JavaSource;
 import org.jboss.forge.roaster.model.util.Strings;
-import org.jboss.shrinkwrap.descriptor.api.DescriptorImporter;
-import org.jboss.shrinkwrap.descriptor.api.Descriptors;
-import org.jboss.shrinkwrap.descriptor.api.batchXML10.BatchXMLDescriptor;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.lang.Override;
-import java.lang.Exception;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import javax.batch.api.chunk.AbstractItemReader;
-import javax.batch.api.chunk.AbstractItemWriter;
-import javax.batch.api.chunk.ItemProcessor;
-import javax.batch.api.chunk.ItemReader;
-import javax.batch.api.chunk.ItemWriter;
-import javax.inject.Inject;
-import javax.inject.Named;
 
 public class BatchNewJobXmlCommand extends AbstractProjectCommand {
 
@@ -123,6 +118,9 @@ public class BatchNewJobXmlCommand extends AbstractProjectCommand {
 	}
 
 	@Inject
+	@WithAttributes(label = "JobXML", required = true)
+	UIInput<String> jobXML;
+	@Inject
 	@WithAttributes(label = "ItemReader", type = InputType.JAVA_CLASS_PICKER, required=true)
 	UIInput<String> reader;
 	@Inject
@@ -131,15 +129,6 @@ public class BatchNewJobXmlCommand extends AbstractProjectCommand {
 	@Inject
 	@WithAttributes(label = "ItemWriter", type = InputType.JAVA_CLASS_PICKER, required=true)
 	UIInput<String> writer;
-	@Inject
-	@WithAttributes(label = "JobXML", required = true)
-	UIInput<String> jobXML;
-	@Inject
-	UIInputMany<String> inputMany;
-	@Inject
-	UISelectOne<String> selectOne;
-	@Inject
-	UISelectMany<String> selectMany;
 
 	@Inject
 	ProjectFactory projectFactory;
@@ -182,7 +171,7 @@ public class BatchNewJobXmlCommand extends AbstractProjectCommand {
 			}
 
 		});
-		builder.add(reader).add(processor).add(writer).add(jobXML);
+		builder.add(jobXML).add(reader).add(processor).add(writer);
 	}
 
 	private FileResource<?> getJobXMLResource(
@@ -204,8 +193,9 @@ public class BatchNewJobXmlCommand extends AbstractProjectCommand {
 		try {
 			templateContext.put("readerBeanName", getCDIBeanName(context, reader.getValue()));
 			templateContext.put("processorBeanName", getCDIBeanName(context, processor.getValue()));
-			templateContext.put("writerBeanName", getCDIBeanName(context, processor.getValue()));
-			
+			templateContext.put("writerBeanName", getCDIBeanName(context, writer.getValue()));
+
+			jobXMLResource.createNewFile();
 			jobXMLResource.setContents(template.process(templateContext));
 		} catch (IOException e) {
 			return Results.fail(e.getMessage(), e);
