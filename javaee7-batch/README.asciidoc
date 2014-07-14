@@ -60,3 +60,9 @@ Causes XYZ to occur
 ----
 XYZ xyz = factory.createXYZ();
 ----
+
+== TODO
+- Add a top-level pom.xml for installation
+- Create new reader, processor, writer
+- Upgrade to 2.7.0
+- IDE integration
