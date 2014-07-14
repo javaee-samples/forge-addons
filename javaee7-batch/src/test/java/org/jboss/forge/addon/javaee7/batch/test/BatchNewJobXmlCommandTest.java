@@ -80,4 +80,29 @@ public class BatchNewJobXmlCommandTest {
 		// verify results
 		Assert.assertFalse(result instanceof Failed);
 	}
+	
+
+	@Test
+	public void testNewJobXmlOptionalProcessor() throws Exception {
+		Project createTempProject = factory.createTempProject();
+		CommandController commandController = harness.createCommandController(BatchNewJobXmlCommand.class, createTempProject.getRoot());
+		commandController.initialize();
+		
+		// set values
+		commandController.setValueFor("reader", MyItemReader.class.getName());
+//		commandController.setValueFor("processor", MyItemProcessor.class.getName());
+		commandController.setValueFor("writer", MyItemWriter.class.getName());
+		commandController.setValueFor("jobXML", "myJob.xml");
+		
+		// validate
+		List<UIMessage> validate = commandController.validate();
+		Assert.assertEquals(0,  validate.size());
+		
+		// execute
+		Result result = commandController.execute();
+		
+		// verify results
+		Assert.assertFalse(result instanceof Failed);
+	}
+
 }

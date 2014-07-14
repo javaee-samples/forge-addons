@@ -17,6 +17,8 @@ import javax.batch.api.chunk.ItemWriter;
 import javax.inject.Inject;
 import javax.inject.Named;
 
+import org.jboss.forge.addon.facets.constraints.FacetConstraint;
+import org.jboss.forge.addon.facets.constraints.FacetConstraints;
 import org.jboss.forge.addon.parser.java.facets.JavaSourceFacet;
 import org.jboss.forge.addon.parser.java.resources.JavaResource;
 import org.jboss.forge.addon.parser.java.resources.JavaResourceVisitor;
@@ -56,6 +58,7 @@ import org.jboss.forge.roaster.model.source.JavaClassSource;
 import org.jboss.forge.roaster.model.source.JavaSource;
 import org.jboss.forge.roaster.model.util.Strings;
 
+//@FacetConstraint({ResourcesFacet.class, JavaSourceFacet.class})
 public class BatchNewJobXmlCommand extends AbstractProjectCommand {
 
 	private final class NamedValidator implements UIValidator {
@@ -64,6 +67,8 @@ public class BatchNewJobXmlCommand extends AbstractProjectCommand {
 			Project selectedProject = getSelectedProject(context);
 			JavaSourceFacet javaFacet = selectedProject.getFacet(JavaSourceFacet.class);
 			try {
+				if (null == context.getCurrentInputComponent())
+					return;
 				JavaResource javaResource = javaFacet.getJavaResource((String)context.getCurrentInputComponent().getValue());
 				if (!javaResource.getJavaType().hasAnnotation(Named.class)) {
 					context.addValidationError(context.getCurrentInputComponent(), javaResource.getFullyQualifiedName() + " must be annotated with @Named");
@@ -186,7 +191,7 @@ public class BatchNewJobXmlCommand extends AbstractProjectCommand {
 		
 		FileResource<?> jobXMLResource = getJobXMLResource(context.getUIContext(), jobXML.getValue());
 //		 BatchXMLDescriptor descriptor = Descriptors.create(BatchXMLDescriptor.class);
-		Resource<URL> templateJobXML = resourceFactory.create(getClass().getResource("/templates" + File.separator + "job.ftl")).reify(URLResource.class);
+		Resource<URL> templateJobXML = resourceFactory.create(getClass().getResource("/templates/job.ftl")).reify(URLResource.class);
 		Template template = templateFactory.create(templateJobXML, FreemarkerTemplate.class);
 		
 		Map<String, Object> templateContext = new HashMap<>();
