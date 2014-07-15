@@ -197,8 +197,10 @@ public class BatchNewJobXmlCommand extends AbstractProjectCommand {
 		Map<String, Object> templateContext = new HashMap<>();
 		try {
 			templateContext.put("readerBeanName", getCDIBeanName(context, reader.getValue()));
-			templateContext.put("processorBeanName", getCDIBeanName(context, processor.getValue()));
 			templateContext.put("writerBeanName", getCDIBeanName(context, writer.getValue()));
+			if (processor.hasValue()) {
+			    templateContext.put("processorBeanName", getCDIBeanName(context, processor.getValue()));
+			}
 
 			jobXMLResource.createNewFile();
 			jobXMLResource.setContents(template.process(templateContext));
