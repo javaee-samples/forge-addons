@@ -72,13 +72,9 @@ public class BatchNewJobXmlCommandTest {
 		JavaClassSource processor = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemProcessor.jv"));
 		JavaClassSource writer = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemWriter.jv"));
 		JavaSourceFacet java = project.getFacet(JavaSourceFacet.class);
-		JavaResource readerResource = java.getJavaResource(reader);
-		JavaResource processorResource = java.getJavaResource(processor);
-		JavaResource writerResource = java.getJavaResource(writer);
-		
-		readerResource.setContents(reader);
-		processorResource.setContents(processor);
-		writerResource.setContents(writer);
+		JavaResource readerResource = java.saveJavaResource(reader);
+		JavaResource processorResource = java.saveJavaResource(processor);
+		JavaResource writerResource = java.saveJavaResource(writer);
 		
 		CommandController commandController = harness.createCommandController(BatchNewJobXmlCommand.class, project.getRoot());
 		commandController.initialize();
@@ -108,11 +104,8 @@ public class BatchNewJobXmlCommandTest {
 		JavaClassSource reader = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemReader.jv"));
 		JavaClassSource writer = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemWriter.jv"));
 		JavaSourceFacet java = project.getFacet(JavaSourceFacet.class);
-		JavaResource readerResource = java.getJavaResource(reader);
-		JavaResource writerResource = java.getJavaResource(writer);
-		
-		readerResource.setContents(reader);
-		writerResource.setContents(writer);
+		JavaResource readerResource = java.saveJavaResource(reader);
+		JavaResource writerResource = java.saveJavaResource(writer);
 		
 		CommandController commandController = harness.createCommandController(BatchNewJobXmlCommand.class, project.getRoot());
 		commandController.initialize();
