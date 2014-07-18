@@ -67,7 +67,7 @@ public class BatchNewJobXmlCommand extends AbstractProjectCommand {
 			Project selectedProject = getSelectedProject(context);
 			JavaSourceFacet javaFacet = selectedProject.getFacet(JavaSourceFacet.class);
 			try {
-				if (null == context.getCurrentInputComponent())
+				if (null == context.getCurrentInputComponent().getValue())
 					return;
 				JavaResource javaResource = javaFacet.getJavaResource((String)context.getCurrentInputComponent().getValue());
 				if (!javaResource.getJavaType().hasAnnotation(Named.class)) {

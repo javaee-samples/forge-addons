@@ -1,5 +1,6 @@
 package org.jboss.forge.addon.javaee7.batch.test;
 
+import java.util.Arrays;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -10,11 +11,12 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.jboss.forge.addon.javaee7.batch.commands.BatchNewJobXmlCommand;
-import org.jboss.forge.addon.javaee7.batch.templates.MyItemProcessor;
-import org.jboss.forge.addon.javaee7.batch.templates.MyItemReader;
-import org.jboss.forge.addon.javaee7.batch.templates.MyItemWriter;
+import org.jboss.forge.addon.parser.java.facets.JavaSourceFacet;
+import org.jboss.forge.addon.parser.java.resources.JavaResource;
 import org.jboss.forge.addon.projects.Project;
 import org.jboss.forge.addon.projects.ProjectFactory;
+import org.jboss.forge.addon.projects.facets.ResourcesFacet;
+import org.jboss.forge.addon.resource.ResourceFactory;
 import org.jboss.forge.addon.ui.controller.CommandController;
 import org.jboss.forge.addon.ui.output.UIMessage;
 import org.jboss.forge.addon.ui.result.Failed;
@@ -24,6 +26,9 @@ import org.jboss.forge.arquillian.AddonDependency;
 import org.jboss.forge.arquillian.Dependencies;
 import org.jboss.forge.arquillian.archive.ForgeArchive;
 import org.jboss.forge.furnace.repositories.AddonDependencyEntry;
+import org.jboss.forge.roaster.Roaster;
+import org.jboss.forge.roaster.model.JavaType;
+import org.jboss.forge.roaster.model.source.JavaClassSource;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 
 @RunWith(Arquillian.class)
@@ -36,7 +41,8 @@ public class BatchNewJobXmlCommandTest {
 			@AddonDependency(name = "org.jboss.forge.addon:ui-test-harness"),
 			@AddonDependency(name = "org.jboss.forge.addon:maven"),
 			@AddonDependency(name = "org.jboss.forge.addon:projects"),
-			@AddonDependency(name = "org.jboss.forge.addon.javaee7.batch:javaee7-batch")})
+			@AddonDependency(name = "org.jboss.forge.addon.javaee7.batch:javaee7-batch"),
+			@AddonDependency(name = "org.jboss.forge.addon:parser-java")})
 	public static ForgeArchive getDeployment() {
 		ForgeArchive archive = ShrinkWrap
 				.create(ForgeArchive.class)
@@ -48,7 +54,8 @@ public class BatchNewJobXmlCommandTest {
 						AddonDependencyEntry.create("org.jboss.forge.addon:ui-test-harness"),
 						AddonDependencyEntry.create("org.jboss.forge.addon:maven"),
 						AddonDependencyEntry.create("org.jboss.forge.addon:projects"),
-						AddonDependencyEntry.create("org.jboss.forge.addon.javaee7.batch:javaee7-batch"));
+						AddonDependencyEntry.create("org.jboss.forge.addon.javaee7.batch:javaee7-batch"),
+						AddonDependencyEntry.create("org.jboss.forge.addon:parser-java"));
 		return archive;
 	}
 	
@@ -57,17 +64,29 @@ public class BatchNewJobXmlCommandTest {
 	
 	@Inject
 	ProjectFactory factory;
-
-	@Test
+		
+//	@Test
 	public void testNewJobXml() throws Exception {
-		Project createTempProject = factory.createTempProject();
-		CommandController commandController = harness.createCommandController(BatchNewJobXmlCommand.class, createTempProject.getRoot());
+		Project project = factory.createTempProject(Arrays.asList(ResourcesFacet.class, JavaSourceFacet.class));
+		JavaClassSource reader = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemReader.jv"));
+		JavaClassSource processor = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemProcessor.jv"));
+		JavaClassSource writer = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemWriter.jv"));
+		JavaSourceFacet java = project.getFacet(JavaSourceFacet.class);
+		JavaResource readerResource = java.getJavaResource(reader);
+		JavaResource processorResource = java.getJavaResource(processor);
+		JavaResource writerResource = java.getJavaResource(writer);
+		
+		readerResource.setContents(reader);
+		processorResource.setContents(processor);
+		writerResource.setContents(writer);
+		
+		CommandController commandController = harness.createCommandController(BatchNewJobXmlCommand.class, project.getRoot());
 		commandController.initialize();
 		
 		// set values
-		commandController.setValueFor("reader", MyItemReader.class.getName());
-		commandController.setValueFor("processor", MyItemProcessor.class.getName());
-		commandController.setValueFor("writer", MyItemWriter.class.getName());
+		commandController.setValueFor("reader", readerResource.getJavaType().getQualifiedName());
+		commandController.setValueFor("processor", processorResource.getJavaType().getQualifiedName());
+		commandController.setValueFor("writer", writerResource.getJavaType().getQualifiedName());
 		commandController.setValueFor("jobXML", "myJob.xml");
 		
 		// validate
@@ -84,14 +103,23 @@ public class BatchNewJobXmlCommandTest {
 
 	@Test
 	public void testNewJobXmlOptionalProcessor() throws Exception {
-		Project createTempProject = factory.createTempProject();
-		CommandController commandController = harness.createCommandController(BatchNewJobXmlCommand.class, createTempProject.getRoot());
+		Project project = factory.createTempProject(Arrays.asList(ResourcesFacet.class, JavaSourceFacet.class));
+		
+		JavaClassSource reader = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemReader.jv"));
+		JavaClassSource writer = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemWriter.jv"));
+		JavaSourceFacet java = project.getFacet(JavaSourceFacet.class);
+		JavaResource readerResource = java.getJavaResource(reader);
+		JavaResource writerResource = java.getJavaResource(writer);
+		
+		readerResource.setContents(reader);
+		writerResource.setContents(writer);
+		
+		CommandController commandController = harness.createCommandController(BatchNewJobXmlCommand.class, project.getRoot());
 		commandController.initialize();
 		
 		// set values
-		commandController.setValueFor("reader", MyItemReader.class.getName());
-//		commandController.setValueFor("processor", MyItemProcessor.class.getName());
-		commandController.setValueFor("writer", MyItemWriter.class.getName());
+		commandController.setValueFor("reader", readerResource.getJavaType().getQualifiedName());
+		commandController.setValueFor("writer", writerResource.getJavaType().getQualifiedName());
 		commandController.setValueFor("jobXML", "myJob.xml");
 		
 		// validate
