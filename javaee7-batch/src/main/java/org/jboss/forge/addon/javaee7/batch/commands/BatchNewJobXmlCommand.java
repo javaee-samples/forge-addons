@@ -59,6 +59,7 @@ import org.jboss.forge.roaster.model.JavaType;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 import org.jboss.forge.roaster.model.source.JavaSource;
 import org.jboss.forge.roaster.model.util.Strings;
+import org.jboss.forge.roaster.model.util.Types;
 
 //@FacetConstraint({ResourcesFacet.class, JavaSourceFacet.class})
 public class BatchNewJobXmlCommand extends AbstractProjectCommand {
@@ -204,16 +205,20 @@ public class BatchNewJobXmlCommand extends AbstractProjectCommand {
 			JavaSourceFacet javaSourceFacet = getJavaSourceFacet(context);
 			JavaResource javaResource = javaSourceFacet.getJavaResource(reader.getValue());
 			if (!javaResource.exists()) {
-				JavaClassSource reader = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemReader.jv"));
-				javaSourceFacet.saveJavaSource(reader);
+				JavaClassSource readerClass = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemReader.jv"));
+				readerClass.setName(Types.toSimpleName(reader.getValue()));
+				readerClass.setPackage(Types.getPackage(reader.getValue()));
+				javaResource.setContents(readerClass);
 			}
 			templateContext.put("readerBeanName", getCDIBeanName(context, reader.getValue()));
 			
 			// writer
 			javaResource = javaSourceFacet.getJavaResource(writer.getValue());
 			if (!javaResource.exists()) {
-				JavaClassSource writer = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemWriter.jv"));
-				javaSourceFacet.saveJavaSource(writer);
+				JavaClassSource writerClass = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemWriter.jv"));
+				writerClass.setName(Types.toSimpleName(writer.getValue()));
+				writerClass.setPackage(Types.getPackage(writer.getValue()));
+				javaResource.setContents(writerClass);
 			}
 			templateContext.put("writerBeanName", getCDIBeanName(context, writer.getValue()));
 			
@@ -221,8 +226,10 @@ public class BatchNewJobXmlCommand extends AbstractProjectCommand {
 			if (processor.hasValue()) {
 				javaResource = javaSourceFacet.getJavaResource(processor.getValue());
 				if (!javaResource.exists()) {
-					JavaClassSource processor = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemProcessor.jv"));
-					javaSourceFacet.saveJavaSource(processor);
+					JavaClassSource processorClass = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemProcessor.jv"));
+					processorClass.setName(Types.toSimpleName(processor.getValue()));
+					processorClass.setPackage(Types.getPackage(processor.getValue()));
+					javaResource.setContents(processorClass);
 				}
 			    templateContext.put("processorBeanName", getCDIBeanName(context, processor.getValue()));
 			}
