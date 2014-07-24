@@ -28,6 +28,7 @@ import org.jboss.forge.addon.projects.facets.ResourcesFacet;
 import org.jboss.forge.addon.projects.ui.AbstractProjectCommand;
 import org.jboss.forge.addon.resource.FileResource;
 import org.jboss.forge.addon.resource.Resource;
+import org.jboss.forge.addon.resource.ResourceException;
 import org.jboss.forge.addon.resource.ResourceFactory;
 import org.jboss.forge.addon.resource.URLResource;
 import org.jboss.forge.addon.resource.visit.VisitContext;
@@ -52,6 +53,7 @@ import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
 import org.jboss.forge.addon.ui.util.Metadata;
 import org.jboss.forge.addon.ui.validate.UIValidator;
+import org.jboss.forge.roaster.Roaster;
 import org.jboss.forge.roaster.model.Annotation;
 import org.jboss.forge.roaster.model.JavaType;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
@@ -70,8 +72,10 @@ public class BatchNewJobXmlCommand extends AbstractProjectCommand {
 				if (null == context.getCurrentInputComponent().getValue())
 					return;
 				JavaResource javaResource = javaFacet.getJavaResource((String)context.getCurrentInputComponent().getValue());
-				if (!javaResource.getJavaType().hasAnnotation(Named.class)) {
-					context.addValidationError(context.getCurrentInputComponent(), javaResource.getFullyQualifiedName() + " must be annotated with @Named");
+				if (javaResource.exists()) {
+					if (!javaResource.getJavaType().hasAnnotation(Named.class)) {
+						context.addValidationError(context.getCurrentInputComponent(), javaResource.getFullyQualifiedName() + " must be annotated with @Named");
+					}
 				}
 			} catch (FileNotFoundException e) {
 				context.addValidationError(context.getCurrentInputComponent(), e.getMessage());
@@ -196,9 +200,30 @@ public class BatchNewJobXmlCommand extends AbstractProjectCommand {
 		
 		Map<String, Object> templateContext = new HashMap<>();
 		try {
+			// reader
+			JavaSourceFacet javaSourceFacet = getJavaSourceFacet(context);
+			JavaResource javaResource = javaSourceFacet.getJavaResource(reader.getValue());
+			if (!javaResource.exists()) {
+				JavaClassSource reader = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemReader.jv"));
+				javaSourceFacet.saveJavaSource(reader);
+			}
 			templateContext.put("readerBeanName", getCDIBeanName(context, reader.getValue()));
+			
+			// writer
+			javaResource = javaSourceFacet.getJavaResource(writer.getValue());
+			if (!javaResource.exists()) {
+				JavaClassSource writer = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemWriter.jv"));
+				javaSourceFacet.saveJavaSource(writer);
+			}
 			templateContext.put("writerBeanName", getCDIBeanName(context, writer.getValue()));
+			
+			// processor
 			if (processor.hasValue()) {
+				javaResource = javaSourceFacet.getJavaResource(processor.getValue());
+				if (!javaResource.exists()) {
+					JavaClassSource processor = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemProcessor.jv"));
+					javaSourceFacet.saveJavaSource(processor);
+				}
 			    templateContext.put("processorBeanName", getCDIBeanName(context, processor.getValue()));
 			}
 
@@ -211,15 +236,26 @@ public class BatchNewJobXmlCommand extends AbstractProjectCommand {
 	}
 
 	private String getCDIBeanName(UIContextProvider context, String fqcn) throws FileNotFoundException {
-		Project selectedProject = getSelectedProject(context);
-		JavaSourceFacet javaFacet = selectedProject.getFacet(JavaSourceFacet.class);
-		JavaResource javaResource = javaFacet.getJavaResource(fqcn);
+		JavaResource javaResource = getJavaResourceFromProject(context, fqcn);
 		JavaType<?> javaType = javaResource.getJavaType();
 		Annotation<?> named = javaType.getAnnotation(Named.class);
 		if (named.getStringValue() != null) {
 			return named.getStringValue();
 		}
 		return Strings.uncapitalize(javaType.getName());
+	}
+
+	private JavaResource getJavaResourceFromProject(UIContextProvider context,
+			String fqcn) throws FileNotFoundException {
+		JavaSourceFacet javaFacet = getJavaSourceFacet(context);
+		JavaResource javaResource = javaFacet.getJavaResource(fqcn);
+		return javaResource;
+	}
+
+	private JavaSourceFacet getJavaSourceFacet(UIContextProvider context) {
+		Project selectedProject = getSelectedProject(context);
+		JavaSourceFacet javaFacet = selectedProject.getFacet(JavaSourceFacet.class);
+		return javaFacet;
 	}
 
 	@Override
