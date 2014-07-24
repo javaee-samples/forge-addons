@@ -65,16 +65,16 @@ public class BatchNewJobXmlCommandTest {
 	@Inject
 	ProjectFactory factory;
 		
-//	@Test
+	@Test
 	public void testNewJobXml() throws Exception {
 		Project project = factory.createTempProject(Arrays.asList(ResourcesFacet.class, JavaSourceFacet.class));
 		JavaClassSource reader = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemReader.jv"));
 		JavaClassSource processor = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemProcessor.jv"));
 		JavaClassSource writer = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemWriter.jv"));
 		JavaSourceFacet java = project.getFacet(JavaSourceFacet.class);
-		JavaResource readerResource = java.saveJavaResource(reader);
-		JavaResource processorResource = java.saveJavaResource(processor);
-		JavaResource writerResource = java.saveJavaResource(writer);
+		JavaResource readerResource = java.saveJavaSource(reader);
+		JavaResource processorResource = java.saveJavaSource(processor);
+		JavaResource writerResource = java.saveJavaSource(writer);
 		
 		CommandController commandController = harness.createCommandController(BatchNewJobXmlCommand.class, project.getRoot());
 		commandController.initialize();
@@ -104,8 +104,8 @@ public class BatchNewJobXmlCommandTest {
 		JavaClassSource reader = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemReader.jv"));
 		JavaClassSource writer = Roaster.parse(JavaClassSource.class, getClass().getClassLoader().getResource("templates/MyItemWriter.jv"));
 		JavaSourceFacet java = project.getFacet(JavaSourceFacet.class);
-		JavaResource readerResource = java.saveJavaResource(reader);
-		JavaResource writerResource = java.saveJavaResource(writer);
+		JavaResource readerResource = java.saveJavaSource(reader);
+		JavaResource writerResource = java.saveJavaSource(writer);
 		
 		CommandController commandController = harness.createCommandController(BatchNewJobXmlCommand.class, project.getRoot());
 		commandController.initialize();
